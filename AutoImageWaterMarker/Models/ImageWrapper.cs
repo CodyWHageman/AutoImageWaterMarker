@@ -15,13 +15,23 @@ namespace AutoImageWaterMarker.Models
         private Image _markedImage;
         private string _originalPath;
 
+        private string _displayPath;
+
+        public string DisplayPath
+        {
+            get => _displayPath;
+            set => SetProperty(ref _displayPath, value);
+        }
+
         public ImageWrapper(string path)
         {
             Path = path;
             _originalPath = path;
             WatermarkerConfig = new WatermarkerConfig();
             _random = new Random();
+            GenerateDisplayFile();
         }
+
 
         private string _path;
 
@@ -39,6 +49,12 @@ namespace AutoImageWaterMarker.Models
             set => SetProperty(ref _watermarkerConfig, value);
         }
 
+        private void GenerateDisplayFile()
+        {
+            DisplayPath = $"{System.IO.Path.GetTempPath()}AutoImageWaterMarker\\{Guid.NewGuid()}.BMP";
+            Directory.CreateDirectory(new FileInfo(DisplayPath).Directory.FullName);
+            File.Copy(Path,DisplayPath,true);
+        }
         public void Mark()
         {
             _markedImage = Watermarker.DrawOn(Path, WatermarkerConfig);
@@ -58,6 +74,7 @@ namespace AutoImageWaterMarker.Models
         private void Save()
         {
             _markedImage.Save(Path);
+            GenerateDisplayFile();
         }
 
         private void DeleteMarkedImage()
