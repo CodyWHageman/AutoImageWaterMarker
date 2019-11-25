@@ -4,24 +4,33 @@ using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 
 namespace AutoImageWaterMarker.Models
 {
     public class ImageWrapper : ModelBase
     {
         public event EventHandler Updated;
-
-        private Random _random;
+        private const string SaveDirectory = @"C:\WatermarkedImages";
+        
         private Image _markedImage;
         private string _originalPath;
+        private string _displayPath;
+
+        public string DisplayPath
+        {
+            get => _displayPath;
+            set => SetProperty(ref _displayPath, value);
+        }
 
         public ImageWrapper(string path)
         {
             Path = path;
             _originalPath = path;
             WatermarkerConfig = new WatermarkerConfig();
-            _random = new Random();
+            GenerateDisplayFile();
         }
+
 
         private string _path;
 
@@ -39,6 +48,12 @@ namespace AutoImageWaterMarker.Models
             set => SetProperty(ref _watermarkerConfig, value);
         }
 
+        private void GenerateDisplayFile()
+        {
+            DisplayPath = $"{System.IO.Path.GetTempPath()}AutoImageWaterMarker\\{Guid.NewGuid()}.BMP";
+            Directory.CreateDirectory(new FileInfo(DisplayPath).Directory.FullName);
+            File.Copy(Path,DisplayPath,true);
+        }
         public void Mark()
         {
             _markedImage = Watermarker.DrawOn(Path, WatermarkerConfig);
@@ -58,6 +73,7 @@ namespace AutoImageWaterMarker.Models
         private void Save()
         {
             _markedImage.Save(Path);
+            GenerateDisplayFile();
         }
 
         private void DeleteMarkedImage()
@@ -75,29 +91,24 @@ namespace AutoImageWaterMarker.Models
 
         private string GenerateNewPath()
         {
-            var newPath = @"C:\WatermarkedImages";
-            if (!Directory.Exists(newPath)) Directory.CreateDirectory(newPath);
+            if (!Directory.Exists(SaveDirectory)) Directory.CreateDirectory(SaveDirectory);
 
-            var newFileName = $@"\marked_image_{NextNumber()}.jpg";
-            var fullPath = $@"{newPath}\{newFileName}";
-            var fileExists = File.Exists(fullPath);
+            var newFileName = $@"\marked_image_{NextNumber().ToString().PadLeft(6,'0')}.jpg";
+            var fullPath = $@"{SaveDirectory}\{newFileName}";
 
-            if (fileExists)
-            {
-                while(fileExists)
-                {
-                    newFileName = $@"\marked_image_{NextNumber()}.jpg";
-                    fullPath = $@"{newPath}\{newFileName}";
-
-                    fileExists = File.Exists(fullPath);
-                }
-            }
 
             return fullPath;
         }
 
-        private int NextNumber() => _random.Next(minValue: 10000, maxValue: 99999);
-        
+        private int NextNumber()
+        {
+            var files = Directory.GetFiles(SaveDirectory);
+            if (files.Length == 0) return 1;
+            return files.Select(file =>
+                           file.Substring(file.Length - (6 + (System.IO.Path.GetExtension(file).Length)), 6))
+                       .Max(Convert.ToInt32) + 1;
+        }
+
         private void OnWatermarkerConfigPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             Remark();

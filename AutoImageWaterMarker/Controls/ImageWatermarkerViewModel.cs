@@ -1,10 +1,7 @@
 ﻿using AutoImageWaterMarker.Models;
 using AutoImageWaterMarker.Utilities;
-using AutoImageWaterMarker.Watermark;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
 
@@ -15,6 +12,7 @@ namespace AutoImageWaterMarker.Controls
         public ImageWatermarkerViewModel()
         {
             Images = new ObservableCollection<ImageWrapper>();
+            ClearTempFiles();
         }
         
         private ObservableCollection<ImageWrapper> _images;
@@ -24,7 +22,13 @@ namespace AutoImageWaterMarker.Controls
             get => _images;
             set => SetProperty(ref _images, value);
         }
-        
+
+        private void ClearTempFiles()
+        {
+            var tempDirectory = $"{System.IO.Path.GetTempPath()}AutoImageWaterMarker\\";
+            if (Directory.Exists(tempDirectory))
+                Directory.Delete(tempDirectory,true);
+        }
         public RelayCommand LoadImagesCommand => new RelayCommand(LoadImages);
 
         private void LoadImages(object obj)
