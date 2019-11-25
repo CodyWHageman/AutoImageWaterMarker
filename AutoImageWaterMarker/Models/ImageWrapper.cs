@@ -4,17 +4,17 @@ using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 
 namespace AutoImageWaterMarker.Models
 {
     public class ImageWrapper : ModelBase
     {
         public event EventHandler Updated;
-
-        private Random _random;
+        private const string SaveDirectory = @"C:\WatermarkedImages";
+        
         private Image _markedImage;
         private string _originalPath;
-
         private string _displayPath;
 
         public string DisplayPath
@@ -28,7 +28,6 @@ namespace AutoImageWaterMarker.Models
             Path = path;
             _originalPath = path;
             WatermarkerConfig = new WatermarkerConfig();
-            _random = new Random();
             GenerateDisplayFile();
         }
 
@@ -92,29 +91,24 @@ namespace AutoImageWaterMarker.Models
 
         private string GenerateNewPath()
         {
-            var newPath = @"C:\WatermarkedImages";
-            if (!Directory.Exists(newPath)) Directory.CreateDirectory(newPath);
+            if (!Directory.Exists(SaveDirectory)) Directory.CreateDirectory(SaveDirectory);
 
-            var newFileName = $@"\marked_image_{NextNumber()}.jpg";
-            var fullPath = $@"{newPath}\{newFileName}";
-            var fileExists = File.Exists(fullPath);
+            var newFileName = $@"\marked_image_{NextNumber().ToString().PadLeft(6,'0')}.jpg";
+            var fullPath = $@"{SaveDirectory}\{newFileName}";
 
-            if (fileExists)
-            {
-                while(fileExists)
-                {
-                    newFileName = $@"\marked_image_{NextNumber()}.jpg";
-                    fullPath = $@"{newPath}\{newFileName}";
-
-                    fileExists = File.Exists(fullPath);
-                }
-            }
 
             return fullPath;
         }
 
-        private int NextNumber() => _random.Next(minValue: 10000, maxValue: 99999);
-        
+        private int NextNumber()
+        {
+            var files = Directory.GetFiles(SaveDirectory);
+            if (files.Length == 0) return 1;
+            return files.Select(file =>
+                           file.Substring(file.Length - (6 + (System.IO.Path.GetExtension(file).Length)), 6))
+                       .Max(Convert.ToInt32) + 1;
+        }
+
         private void OnWatermarkerConfigPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             Remark();

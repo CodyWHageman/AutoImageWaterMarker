@@ -12,6 +12,7 @@ namespace AutoImageWaterMarker.Controls
         public ImageWatermarkerViewModel()
         {
             Images = new ObservableCollection<ImageWrapper>();
+            ClearTempFiles();
         }
         
         private ObservableCollection<ImageWrapper> _images;
@@ -19,8 +20,7 @@ namespace AutoImageWaterMarker.Controls
         public ObservableCollection<ImageWrapper> Images
         {
             get => _images;
-            set { ClearTempFiles();
-                SetProperty(ref _images, value); }
+            set => SetProperty(ref _images, value);
         }
 
         private void ClearTempFiles()
